@@ -51,7 +51,7 @@ static inline void nft_connlimit_do_eval(struct nft_connlimit *priv,
 	if (!addit)
 		goto out;
 
-	if (!nf_conncount_add(&priv->list, tuple_ptr, zone)) {
+	if (nf_conncount_add(&priv->list, tuple_ptr, zone) == NF_CONNCOUNT_ERR) {
 		regs->verdict.code = NF_DROP;
 		return;
 	}
@@ -86,6 +86,7 @@ static int nft_connlimit_do_init(const struct nft_ctx *ctx,
 
 	spin_lock_init(&priv->list.list_lock);
 	INIT_LIST_HEAD(&priv->list.head);
+	priv->list.dead = false;
 	priv->limit	= limit;
 	priv->invert	= invert;
 
@@ -211,6 +212,7 @@ static int nft_connlimit_clone(struct nft_expr *dst, const struct nft_expr *src)
 
 	spin_lock_init(&priv_dst->list.list_lock);
 	INIT_LIST_HEAD(&priv_dst->list.head);
+	priv_dst->list.dead = false;
 	priv_dst->limit	 = priv_src->limit;
 	priv_dst->invert = priv_src->invert;
 
